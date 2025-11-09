@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 
+// Get cell value or render for table
 const getCellValue = (country, key) => {
   try {
     if (key === "name") return country.name?.common ?? "";
@@ -9,7 +10,17 @@ const getCellValue = (country, key) => {
         .map(([code, obj]) => `${code}${obj?.symbol ? ` (${obj.symbol})` : ""}`)
         .join(", ");
     }
-    if (key === "flag") return country.flag ?? "";
+    if (key === "flag") {
+      const flagUrl = country.flags?.png || country.flags?.svg;
+      if (!flagUrl) return "";
+      return (
+        <img
+          src={flagUrl}
+          alt={country.name?.common}
+          style={{ width: 40, height: 25, objectFit: "cover", borderRadius: 2 }}
+        />
+      );
+    }
     if (key === "languages") return Object.values(country.languages || {}).join(", ");
     if (key === "continents") return (country.continents || []).join(", ");
     if (key === "timezones") return (country.timezones || []).join(", ");
@@ -29,6 +40,7 @@ const CountryTable = ({ countries = [], columns = [], rowsPerPage = 10 }) => {
   const [sortConfig, setSortConfig] = useState({ key: "", direction: "" });
   const [page, setPage] = useState(1);
 
+  // Filter countries
   const filtered = useMemo(() => {
     return countries.filter((c) => {
       const name = (c.name?.common || "").toLowerCase();
@@ -39,6 +51,7 @@ const CountryTable = ({ countries = [], columns = [], rowsPerPage = 10 }) => {
     });
   }, [countries, filterName, filterCurrency]);
 
+  // Sort countries
   const sorted = useMemo(() => {
     if (!sortConfig.key) return filtered;
     const key = sortConfig.key;
@@ -46,6 +59,9 @@ const CountryTable = ({ countries = [], columns = [], rowsPerPage = 10 }) => {
     return [...filtered].sort((a, b) => {
       const aVal = getCellValue(a, key);
       const bVal = getCellValue(b, key);
+
+      // If the value is React element (like flag image), skip numeric comparison
+      if (React.isValidElement(aVal) || React.isValidElement(bVal)) return 0;
 
       const numA = parseFloat(aVal);
       const numB = parseFloat(bVal);
@@ -67,6 +83,7 @@ const CountryTable = ({ countries = [], columns = [], rowsPerPage = 10 }) => {
   const actualPage = Math.min(page, totalPages);
   const paginated = sorted.slice((actualPage - 1) * rowsPerPage, actualPage * rowsPerPage);
 
+  // Handle sorting click
   const handleSort = (key) => {
     setPage(1);
     setSortConfig((prev) => {
