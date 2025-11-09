@@ -32,7 +32,9 @@ const App = () => {
 
   // Build API endpoint dynamically based on requested fields
   const buildEndpoint = useCallback((fields) => {
-    const fieldNames = fields.join(",");
+    // Map 'flag' key to 'flags' API field
+    const apiFields = fields.map((f) => (f === "flag" ? "flags" : f));
+    const fieldNames = apiFields.join(",");
     return `https://restcountries.com/v3.1/all?fields=${fieldNames}`;
   }, []);
 
