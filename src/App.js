@@ -1,4 +1,3 @@
-// src/App.js
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import CountryTable from "./components/CountryTable";
 import AdditionalColumns from "./components/AdditionalColumns";
@@ -10,13 +9,13 @@ const App = () => {
   const [errorMsg, setErrorMsg] = useState("");
   const [extraColumns, setExtraColumns] = useState([]);
 
-  // Base columns
+  // Base columns for the table
   const baseColumns = useMemo(
     () => [
       { key: "name", label: "Name" },
       { key: "capital", label: "Capital" },
       { key: "currencies", label: "Currencies" },
-      { key: "flag", label: "Flag" }, // Will render as image
+      { key: "flag", label: "Flag" },
       { key: "languages", label: "Languages" },
       { key: "continents", label: "Continents" },
       { key: "region", label: "Region" },
@@ -25,19 +24,19 @@ const App = () => {
     []
   );
 
-  // Combine base + extra columns
+  // All columns including extra user-added columns
   const allColumns = useMemo(
     () => [...baseColumns, ...extraColumns.map((f) => ({ key: f, label: f }))],
     [baseColumns, extraColumns]
   );
 
-  // Build API endpoint for selected fields (useCallback)
+  // Build API endpoint dynamically based on requested fields
   const buildEndpoint = useCallback((fields) => {
     const fieldNames = fields.join(",");
-    return `https://restcountries.com/v3.1/all?fields=${fieldNames},flags,cca3`;
+    return `https://restcountries.com/v3.1/all?fields=${fieldNames}`;
   }, []);
 
-  // Fetch countries data (useCallback)
+  // Fetch countries from API
   const fetchCountries = useCallback(
     async (fields) => {
       setLoading(true);
@@ -55,33 +54,30 @@ const App = () => {
         setLoading(false);
       }
     },
-    [buildEndpoint] // stable dependency
+    [buildEndpoint]
   );
 
-  // Initial fetch
+  // Fetch base countries on initial render
   useEffect(() => {
     const baseKeys = baseColumns.map((c) => c.key);
     fetchCountries(baseKeys);
   }, [baseColumns, fetchCountries]);
 
-  // Handle adding extra columns
-  const handleAddExtraColumn = useCallback(
-    (field) => {
-      const currentCount = baseColumns.length + extraColumns.length;
-      if (currentCount >= 10) {
-        setErrorMsg("Maximum number of columns reached");
-        return false;
-      }
-      if (extraColumns.includes(field)) return false;
+  // Add a new extra column
+  const handleAddExtraColumn = (field) => {
+    const currentCount = baseColumns.length + extraColumns.length;
+    if (currentCount >= 10) {
+      setErrorMsg("Maximum number of columns reached");
+      return false;
+    }
+    if (extraColumns.includes(field)) return false;
 
-      const updated = [...extraColumns, field];
-      setExtraColumns(updated);
-      const newFields = [...baseColumns.map((c) => c.key), ...updated];
-      fetchCountries(newFields);
-      return true;
-    },
-    [baseColumns, extraColumns, fetchCountries]
-  );
+    const updated = [...extraColumns, field];
+    setExtraColumns(updated);
+    const newFields = [...baseColumns.map((c) => c.key), ...updated];
+    fetchCountries(newFields);
+    return true;
+  };
 
   return (
     <div className="app">
