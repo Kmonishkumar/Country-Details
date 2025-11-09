@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import CountryTable from "./components/CountryTable";
 import AdditionalColumns from "./components/AdditionalColumns";
 import "./App.css";
@@ -9,6 +9,7 @@ const App = () => {
   const [errorMsg, setErrorMsg] = useState("");
   const [extraColumns, setExtraColumns] = useState([]);
 
+  // Base columns for the table
   const baseColumns = useMemo(
     () => [
       { key: "name", label: "Name" },
@@ -23,38 +24,46 @@ const App = () => {
     []
   );
 
+  // All columns including extra user-added columns
   const allColumns = useMemo(
     () => [...baseColumns, ...extraColumns.map((f) => ({ key: f, label: f }))],
     [baseColumns, extraColumns]
   );
 
-  const buildEndpoint = (fields) => {
+  // Build API endpoint dynamically based on requested fields
+  const buildEndpoint = useCallback((fields) => {
     const fieldNames = fields.join(",");
     return `https://restcountries.com/v3.1/all?fields=${fieldNames}`;
-  };
+  }, []);
 
-  const fetchCountries = async (fields) => {
-    setLoading(true);
-    try {
-      const endpoint = buildEndpoint(fields);
-      const res = await fetch(endpoint);
-      if (!res.ok) throw new Error("Fetch failed");
-      const data = await res.json();
-      setCountries(data);
-      setErrorMsg("");
-    } catch (err) {
-      console.error(err);
-      setErrorMsg("Failed to fetch country data.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Fetch countries from API
+  const fetchCountries = useCallback(
+    async (fields) => {
+      setLoading(true);
+      try {
+        const endpoint = buildEndpoint(fields);
+        const res = await fetch(endpoint);
+        if (!res.ok) throw new Error("Fetch failed");
+        const data = await res.json();
+        setCountries(data);
+        setErrorMsg("");
+      } catch (err) {
+        console.error(err);
+        setErrorMsg("Failed to fetch country data.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [buildEndpoint]
+  );
 
+  // Fetch base countries on initial render
   useEffect(() => {
     const baseKeys = baseColumns.map((c) => c.key);
     fetchCountries(baseKeys);
-  }, [baseColumns]);
+  }, [baseColumns, fetchCountries]);
 
+  // Add a new extra column
   const handleAddExtraColumn = (field) => {
     const currentCount = baseColumns.length + extraColumns.length;
     if (currentCount >= 10) {
