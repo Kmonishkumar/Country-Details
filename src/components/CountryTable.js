@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 
+// Updated getCellValue to render flags as images
 const getCellValue = (country, key) => {
   try {
     if (key === "name") return country.name?.common ?? "";
@@ -9,7 +10,12 @@ const getCellValue = (country, key) => {
         .map(([code, obj]) => `${code}${obj?.symbol ? ` (${obj.symbol})` : ""}`)
         .join(", ");
     }
-    if (key === "flag") return country.flag ?? "";
+    if (key === "flag") {
+      if (country.flags?.png) {
+        return <img src={country.flags.png} alt={`Flag of ${country.name?.common}`} width={40} />;
+      }
+      return "";
+    }
     if (key === "languages") return Object.values(country.languages || {}).join(", ");
     if (key === "continents") return (country.continents || []).join(", ");
     if (key === "timezones") return (country.timezones || []).join(", ");
@@ -47,6 +53,7 @@ const CountryTable = ({ countries = [], columns = [], rowsPerPage = 10 }) => {
       const aVal = getCellValue(a, key);
       const bVal = getCellValue(b, key);
 
+      // Compare numbers if numeric
       const numA = parseFloat(aVal);
       const numB = parseFloat(bVal);
       const isNumeric = !isNaN(numA) && !isNaN(numB);
@@ -55,6 +62,7 @@ const CountryTable = ({ countries = [], columns = [], rowsPerPage = 10 }) => {
         return direction === "asc" ? numA - numB : numB - numA;
       }
 
+      // Compare strings
       const aStr = String(aVal).toLowerCase();
       const bStr = String(bVal).toLowerCase();
       if (aStr < bStr) return direction === "asc" ? -1 : 1;
